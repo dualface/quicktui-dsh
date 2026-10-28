@@ -8,7 +8,7 @@ import { test } from 'node:test'
 import { claimOwner } from '../lib/owner.js'
 import { setupRoutes } from '../lib/routes.js'
 import {
-  APP_LINKS, INSTALL_SCRIPTS, PAIRING_TTL_MS, SetupError, createSetup, decodePairingText, listenPort, parseDevices,
+  APP_LINKS, INSTALL_SCRIPTS, ab2Root, PAIRING_TTL_MS, SetupError, createSetup, decodePairingText, listenPort, parseDevices,
   qrSvg, serverCandidates,
 } from '../lib/setup.js'
 
@@ -38,6 +38,11 @@ test('server candidates per platform', () => {
     ['D:\\Local\\QuickTUI\\quicktui-server.exe', 'D:\\Local\\Microsoft\\WindowsApps\\quicktui-server.exe'])
   assert.deepEqual(serverCandidates({ platform: 'win32', home: 'C:\\Users\\a', env: {} })[0],
     'C:\\Users\\a\\AppData\\Local\\QuickTUI\\quicktui-server.exe')
+})
+
+test('AgentBridge2 root next to the default config', () => {
+  assert.equal(ab2Root({ platform: 'linux', home: '/home/a' }), '/home/a/.config/quicktui-server-v2/agentbridge2')
+  assert.equal(ab2Root({ platform: 'win32', home: 'C:\\Users\\a' }), 'C:\\Users\\a\\.config\\quicktui-server-v2\\agentbridge2')
 })
 
 test('listen port from the config addr', () => {

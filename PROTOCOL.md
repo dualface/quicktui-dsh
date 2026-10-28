@@ -13,7 +13,7 @@ Verified against dsh 0.2.x (deepseek-harness commit 22ddee37) on Windows.
 ## Hook command
 
 The hook is the detected `quicktui-server` executable (or the `serverPath` config): the bridge runs
-`<server> ab2hook --agent dsh ... [--root <root>]` with an argv array. The path is read again
+`<server> ab2hook --agent dsh ... --root <root>` with an argv array. The path is read again
 before every hook process. While no server is known the bridge only writes sidecars and leaves
 every request to Desktop; once one is found it sends `plugin_start`, and the owner (below) starts
 taking commands.
@@ -33,7 +33,7 @@ The `quicktui-dsh` row in a profile's `cordis.patch.yml` takes these optional ke
 | --- | --- |
 | `bridge` | `false` turns the bridge off; default on |
 | `serverPath` | absolute `quicktui-server` path; detected when absent |
-| `root` | passed as `--root` |
+| `root` | passed as `--root`; default `~/.config/quicktui-server-v2/agentbridge2`, the root of the server that uses the default config |
 | `sidecarDir` | default `<DSH_HOME or ~/.dsh>/quicktui/sidecar` |
 | `backfillDays` | default 30 |
 
