@@ -21,8 +21,9 @@ Open this plugin's page in **Plugins**. The page walks through three steps:
 3. **Get the app.** [iPhone and iPad](https://apps.apple.com/us/app/id6761338192) ·
    [Android (preview)](https://quicktui.ai/android/). The page also shows QR codes for these links.
 
-More about QuickTUI: [quicktui.ai](https://quicktui.ai/) (global) ·
-[quicktui.cn](https://quicktui.cn/) (China mainland).
+More about QuickTUI: website [quicktui.ai](https://quicktui.ai/) (global) ·
+[quicktui.cn](https://quicktui.cn/) (China mainland); user guide [quicktui.ai/guide](https://quicktui.ai/guide/) ·
+[quicktui.cn/guide](https://quicktui.cn/guide/). The plugin page lists these links too.
 
 ## dsh sessions in QuickTUI
 

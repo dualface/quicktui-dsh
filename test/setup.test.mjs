@@ -87,6 +87,7 @@ test('status without a server', async () => {
   assert.deepEqual(status.installScripts, INSTALL_SCRIPTS)
   assert.equal(status.installArgs, 'install --channel preview -y')
   assert.deepEqual(status.websites, { global: 'https://quicktui.ai/', cn: 'https://quicktui.cn/' })
+  assert.deepEqual(status.guides, { global: 'https://quicktui.ai/guide/', cn: 'https://quicktui.cn/guide/' })
   assert.equal(status.screenshot, undefined)
   assert.equal(await setup.readScreenshot(), undefined)
   assert.deepEqual(status.apps.map((app) => app.url), [APP_LINKS.cn.ios, APP_LINKS.cn.android])

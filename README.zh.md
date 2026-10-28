@@ -19,7 +19,8 @@
 3. **下载 App.** [iPhone 和 iPad](https://apps.apple.com/cn/app/id6761338192) ·
    [Android (预览版)](https://quicktui.ai/cn/android/). 页面也显示这两个链接的二维码.
 
-了解 QuickTUI: [quicktui.ai](https://quicktui.ai/) (全球) · [quicktui.cn](https://quicktui.cn/) (中国大陆).
+了解 QuickTUI: 官网 [quicktui.ai](https://quicktui.ai/) (全球) · [quicktui.cn](https://quicktui.cn/) (中国大陆);
+使用手册 [quicktui.ai/guide](https://quicktui.ai/guide/) · [quicktui.cn/guide](https://quicktui.cn/guide/). 插件页也列出这些链接.
 
 ## 在 QuickTUI 中查看 dsh 会话
 
