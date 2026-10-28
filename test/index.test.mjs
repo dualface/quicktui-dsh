@@ -36,7 +36,7 @@ test('bridge: false keeps the bridge off; the setup routes are registered', asyn
     const ctx = fakeContext()
     apply(ctx, { bridge: false, sidecarDir: dir, serverPath: join(dir, 'missing', 'quicktui-server') })
     assert.equal(name, 'quicktui-dsh')
-    assert.deepEqual(ctx.routes, ['/api/quicktui-dsh/status', '/api/quicktui-dsh/install', '/api/quicktui-dsh/start', '/api/quicktui-dsh/pairing'])
+    assert.deepEqual(ctx.routes, ['/api/quicktui-dsh/status', '/api/quicktui-dsh/install', '/api/quicktui-dsh/start', '/api/quicktui-dsh/pairing', '/api/quicktui-dsh/app-screenshot'])
     assert.deepEqual(ctx.listeners, [])
     await new Promise((resolve) => setTimeout(resolve, 50))
     assert.equal(existsSync(join(dir, 'owner.pid')), false)

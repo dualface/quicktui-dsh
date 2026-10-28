@@ -8,15 +8,21 @@ Open this plugin's page in **Plugins**. The page walks through three steps:
 
 1. **QuickTUI server.** The page checks whether QuickTUI server is installed on this computer.
    - macOS and Linux: select **Install QuickTUI server**. dsh downloads the official install script
-     and runs it with your user account. It is the same as running
-     `curl -fsSL https://quicktui.ai/q.sh | sh -s -- install -y`
+     and runs it with your user account. It installs the preview channel, the first channel with dsh
+     support. It is the same as running
+     `curl -fsSL https://quicktui.ai/q.sh | sh -s -- install --channel preview -y`
      (in China mainland, `https://dl.quicktui.cn/q.sh`). No administrator password is needed.
    - Windows: install [QuickTUI from the Microsoft Store](https://apps.microsoft.com/detail/9P1SRCZ4CJ8Z),
      then open it once from the Start menu. The page finds the server within a minute.
 2. **Pair your phone.** Select **Show pairing QR code** and scan the code with the QuickTUI app. The
    code can be used once and expires after 15 minutes. The page shows when the phone has paired.
+   dsh sessions have no terminal: in the QuickTUI app, tap the chat icon on the server's card to open
+   the chat list, then open a dsh session there. The page shows a picture of that icon.
 3. **Get the app.** [iPhone and iPad](https://apps.apple.com/us/app/id6761338192) ·
    [Android (preview)](https://quicktui.ai/android/). The page also shows QR codes for these links.
+
+More about QuickTUI: [quicktui.ai](https://quicktui.ai/) (global) ·
+[quicktui.cn](https://quicktui.cn/) (China mainland).
 
 ## dsh sessions in QuickTUI
 

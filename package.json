@@ -29,6 +29,7 @@
     "./locale/*.json": "./locale/*.json"
   },
   "files": [
+    "assets",
     "lib",
     "locale",
     "icon.svg",

@@ -8,8 +8,8 @@ import { test } from 'node:test'
 import { claimOwner } from '../lib/owner.js'
 import { setupRoutes } from '../lib/routes.js'
 import {
-  APP_LINKS, INSTALL_SCRIPTS, ab2Root, PAIRING_TTL_MS, SetupError, createSetup, decodePairingText, listenPort, parseDevices,
-  qrSvg, serverCandidates,
+  APP_LINKS, INSTALL_SCRIPTS, MAX_LOG_CHARS, SCREENSHOT_ROUTE, WEBSITE_LINKS, ab2Root, PAIRING_TTL_MS, SetupError, createSetup,
+  decodePairingText, listenPort, parseDevices, qrSvg, serverCandidates,
 } from '../lib/setup.js'
 
 const pairingText = (value) => 'qtpair:' + Buffer.from(JSON.stringify(value)).toString('base64url')
@@ -85,6 +85,10 @@ test('status without a server', async () => {
   assert.equal(status.server.found, false)
   assert.equal(status.installKind, 'script')
   assert.deepEqual(status.installScripts, INSTALL_SCRIPTS)
+  assert.equal(status.installArgs, 'install --channel preview -y')
+  assert.deepEqual(status.websites, { global: 'https://quicktui.ai/', cn: 'https://quicktui.cn/' })
+  assert.equal(status.screenshot, undefined)
+  assert.equal(await setup.readScreenshot(), undefined)
   assert.deepEqual(status.apps.map((app) => app.url), [APP_LINKS.cn.ios, APP_LINKS.cn.android])
   assert.equal((await setup.status({ region: 'xx' })).apps[0].url, APP_LINKS.global.ios)
   assert.equal((await createSetup({ platform: 'win32', exists: async () => false }).status()).installKind, 'store')
@@ -189,6 +193,7 @@ test('install runs the downloaded script and finds the server', async () => {
   let installed = false
   let child
   let script
+  let args
   const fetched = []
   const changes = []
   const setup = createSetup({
@@ -196,12 +201,13 @@ test('install runs the downloaded script and finds the server', async () => {
     exists: async () => installed,
     readText: async () => '', healthy: async () => false, run: async () => ({ code: 0, stdout: 'v' }),
     fetchScript: async (url) => { fetched.push(url); return scriptResponse('#!/bin/sh\necho hi\n') },
-    spawnInstaller: (file) => { script = readFileSync(file, 'utf8'); child = fakeChild(); return child },
+    spawnInstaller: (file, argv) => { script = readFileSync(file, 'utf8'); args = argv; child = fakeChild(); return child },
     onServerChange: (path) => changes.push(path),
   })
   await setup.startInstall('cn')
   assert.deepEqual(fetched, [INSTALL_SCRIPTS.cn])
   assert.equal(script, '#!/bin/sh\necho hi\n')
+  assert.deepEqual(args, ['install', '--channel', 'preview', '-y'])
   assert.equal((await setup.status()).install.phase, 'running')
   await assert.rejects(setup.startInstall('global'), { code: 'busy' })
   child.stdout.emit('data', Buffer.from('\x1b[32mdownloading\x1b[0m\n'))
@@ -213,6 +219,34 @@ test('install runs the downloaded script and finds the server', async () => {
   assert.equal(status.install.phase, 'succeeded')
   assert.equal(status.install.log, 'downloading\ndone\n')
   assert.equal(status.server.found, true)
+})
+
+const installing = async () => {
+  let child
+  const setup = createSetup({ platform: 'linux', exists: async () => false, fetchScript: async () => scriptResponse('#!/bin/sh\n'), spawnInstaller: () => (child = fakeChild()) })
+  await setup.startInstall('global')
+  return { child, log: async () => (await setup.status()).install.log }
+}
+
+test('install log follows terminal line rules', async () => {
+  const { child, log } = await installing()
+  child.stdout.emit('data', 'Server: 1 MiB\rServer: 2 MiB\r')
+  assert.equal(await log(), 'Server: 2 MiB')
+  // A CR LF split across chunks ends the line once and keeps its text.
+  child.stdout.emit('data', '\nSetup\r')
+  child.stdout.emit('data', '\ntail\r\n')
+  child.stderr.emit('data', 'a\rb\n')
+  assert.equal(await log(), 'Server: 2 MiB\nSetup\ntail\nb\n')
+})
+
+test('install log keeps the newest text and its line rules', async () => {
+  const { child, log } = await installing()
+  child.stdout.emit('data', 'x'.repeat(MAX_LOG_CHARS) + '\n')
+  child.stdout.emit('data', 'p 1\rp 2\r')
+  child.stdout.emit('data', '\nend\n')
+  const text = await log()
+  assert.equal(text.length, MAX_LOG_CHARS)
+  assert.ok(text.endsWith('x\np 2\nend\n'))
 })
 
 test('install failures', async () => {
@@ -241,6 +275,31 @@ test('install failures', async () => {
 
 const request = (method, path, body) => new Request(`http://dsh.local${path}`, { method, body })
 
+test('screenshot route serves only the configured file', async () => {
+  const route = (setup) => setupRoutes(setup).find((entry) => entry.path === SCREENSHOT_ROUTE)
+  assert.equal(SCREENSHOT_ROUTE, '/api/quicktui-dsh/app-screenshot')
+
+  const none = await route(createSetup({ platform: 'linux' })).fetch(request('GET', SCREENSHOT_ROUTE))
+  assert.equal(none.status, 404)
+
+  const dir = mkdtempSync(join(tmpdir(), 'quicktui-dsh-shot-'))
+  try {
+    const file = join(dir, 'phone.png')
+    writeFileSync(file, Buffer.from([0x89, 0x50, 0x4e, 0x47]))
+    writeFileSync(join(dir, 'other.png'), 'other')
+    const setup = createSetup({ platform: 'linux', exists: async () => false, screenshot: file })
+    assert.equal((await setup.status()).screenshot, SCREENSHOT_ROUTE)
+    for (const path of [SCREENSHOT_ROUTE, `${SCREENSHOT_ROUTE}?file=other.png&path=../other.png`]) {
+      const response = await route(setup).fetch(request('GET', path))
+      assert.equal(response.status, 200)
+      assert.equal(response.headers.get('content-type'), 'image/png')
+      assert.deepEqual([...new Uint8Array(await response.arrayBuffer())], [0x89, 0x50, 0x4e, 0x47])
+    }
+  } finally {
+    rmSync(dir, { recursive: true, force: true })
+  }
+})
+
 test('routes', async () => {
   const calls = []
   const setup = {
@@ -254,7 +313,7 @@ test('routes', async () => {
     startPairing: async () => ({ svg: '<svg/>' }),
   }
   const routes = Object.fromEntries(setupRoutes(setup).map((route) => [route.path, route]))
-  assert.deepEqual(Object.keys(routes), ['/api/quicktui-dsh/status', '/api/quicktui-dsh/install', '/api/quicktui-dsh/start', '/api/quicktui-dsh/pairing'])
+  assert.deepEqual(Object.keys(routes), ['/api/quicktui-dsh/status', '/api/quicktui-dsh/install', '/api/quicktui-dsh/start', '/api/quicktui-dsh/pairing', SCREENSHOT_ROUTE])
   for (const route of Object.values(routes)) assert.equal(route.requestBody, 'buffered')
 
   let response = await routes['/api/quicktui-dsh/status'].fetch(request('GET', '/api/quicktui-dsh/status?region=cn'))
