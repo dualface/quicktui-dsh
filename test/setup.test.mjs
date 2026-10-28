@@ -8,7 +8,7 @@ import { test } from 'node:test'
 import { claimOwner } from '../lib/owner.js'
 import { setupRoutes } from '../lib/routes.js'
 import {
-  APP_LINKS, INSTALL_SCRIPTS, MAX_LOG_CHARS, SCREENSHOT_ROUTE, WEBSITE_LINKS, ab2Root, PAIRING_TTL_MS, SetupError, createSetup,
+  APP_LINKS, INSTALL_SCRIPTS, MAX_LOG_CHARS, SCREENSHOT_ROUTE, ab2Root, PAIRING_TTL_MS, SetupError, createSetup,
   decodePairingText, listenPort, parseDevices, qrSvg, serverCandidates,
 } from '../lib/setup.js'
 
@@ -221,15 +221,24 @@ test('install runs the downloaded script and finds the server', async () => {
   assert.equal(status.server.found, true)
 })
 
-const installing = async () => {
+// Starts an install with a fake child; the test ends it so the script's temp dir is removed.
+const installing = async (t) => {
   let child
-  const setup = createSetup({ platform: 'linux', exists: async () => false, fetchScript: async () => scriptResponse('#!/bin/sh\n'), spawnInstaller: () => (child = fakeChild()) })
+  let script
+  const setup = createSetup({
+    platform: 'linux', exists: async () => false, fetchScript: async () => scriptResponse('#!/bin/sh\n'),
+    spawnInstaller: (file) => { script = file; return (child = fakeChild()) },
+  })
   await setup.startInstall('global')
+  t.after(async () => {
+    child.emit('close', 0)
+    await until(() => !existsSync(script))
+  })
   return { child, log: async () => (await setup.status()).install.log }
 }
 
-test('install log follows terminal line rules', async () => {
-  const { child, log } = await installing()
+test('install log follows terminal line rules', async (t) => {
+  const { child, log } = await installing(t)
   child.stdout.emit('data', 'Server: 1 MiB\rServer: 2 MiB\r')
   assert.equal(await log(), 'Server: 2 MiB')
   // A CR LF split across chunks ends the line once and keeps its text.
@@ -239,8 +248,8 @@ test('install log follows terminal line rules', async () => {
   assert.equal(await log(), 'Server: 2 MiB\nSetup\ntail\nb\n')
 })
 
-test('install log keeps the newest text and its line rules', async () => {
-  const { child, log } = await installing()
+test('install log keeps the newest text and its line rules', async (t) => {
+  const { child, log } = await installing(t)
   child.stdout.emit('data', 'x'.repeat(MAX_LOG_CHARS) + '\n')
   child.stdout.emit('data', 'p 1\rp 2\r')
   child.stdout.emit('data', '\nend\n')
