@@ -1,42 +1,52 @@
 # Repository Guidelines
 
-## 作用域
+## Scope
 
-只管 npm 包 `quicktui-dsh`: DeepSeek Harness (dsh) 的 bundle 插件. 用户在 dsh「插件」页按包名安装.
+This file covers only the npm package `quicktui-dsh`: the bundle plugin for DeepSeek Harness (dsh). Users install it by package name on the dsh **Plugins** page.
 
-- `lib/index.js`: host 入口. 组合 server 检测、设置页路由与桥接. 桥接默认开启 (配置 `bridge: false` 关闭).
-- `lib/bridge.js`: AgentBridge2 桥接. 线协议见 [PROTOCOL.md](PROTOCOL.md), 由 `agentbridge2` 的 `ab2hook --agent dsh` 消费.
-- `lib/setup.js`: 检测、安装、启动、配对 `quicktui-server`. `lib/routes.js`: 设置页调用的 `/api/quicktui-dsh/*` 路由.
-- `lib/owner.js`: `owner.pid` 属主锁. 决定由哪个 dsh 进程执行启动回填并等待命令.
-- `lib/client.js`: 浏览器端. 手写的 classic script, 经 `window.__ModuleLoader__.load` 注册, 不经构建.
-- `lib/vendor/qrcode.cjs`: 原样内置的 `qrcode-generator` (MIT). 只整文件替换, 不改内容.
-- `README.md` / `README.zh.md`: dsh 插件详情页 (中文经 `locale/zh.json` 的 `meta.detail` 选用).
-- `CHANGELOG.md`: 每个 npm 版本一节. `LICENSE`: MIT. `scripts/sync-public-repo.sh`: 把本目录同步到公开仓库 (见「发布」).
+- `lib/index.js`: host entry. Combines server detection, the setup page routes, and the bridge. The bridge is on by default (config `bridge: false` turns it off).
+- `lib/bridge.js`: the AgentBridge2 bridge. The wire protocol is in [PROTOCOL.md](PROTOCOL.md); `ab2hook --agent dsh` of `agentbridge2` consumes it.
+- `lib/setup.js`: detects, installs, starts, and pairs `quicktui-server`. `lib/routes.js`: the `/api/quicktui-dsh/*` routes the setup page calls.
+- `lib/owner.js`: the `owner.pid` owner lock. Decides which dsh process runs the startup backfill and waits for commands.
+- `lib/client.js`: browser side. A hand-written classic script, registered through `window.__ModuleLoader__.load`, with no build step.
+- `lib/vendor/qrcode.cjs`: `qrcode-generator` (MIT), vendored as is. Replace the whole file only; never edit its content.
+- `README.md` / `README.zh.md`: the dsh plugin detail page (the Chinese one is selected through `meta.detail` in `locale/zh.json`).
+- `CHANGELOG.md`: one section per npm version. `LICENSE`: MIT. `scripts/sync-public-repo.sh`: syncs this directory to the public repository (see "Publishing").
 
-## 编辑规则
+## Language (hard rule)
 
-- 包无运行时依赖. 浏览器端只能 `require` dsh 共享模块 (`react`、`@deepseek-ai/dsh-client-ui-primitives` 等, 真源为 deepseek-harness `packages/client/web/src/platform.ts`).
-- 运行 `quicktui-server` 一律用绝对路径与 argv 数组, 不经 shell. 安装只运行官方 `q.sh` (`https://quicktui.ai/q.sh` 或 `https://dl.quicktui.cn/q.sh`), 且只在用户在设置页确认后运行.
-- 配对文本与配对码只返回给设置页, 不写日志、不写文件.
-- 设置页文案改动时, `lib/client.js` 的 `en` / `zh` 两份字典同步; 详情页改动时 `README.md` 与 `README.zh.md` 同步.
-- 线协议 (`PROTOCOL.md`) 改动必须与 `agentbridge2` 的 dsh 消费端一致.
+This directory is mirrored to the public repository `github.com/dualface/quicktui-dsh`, so it uses English. This overrides the commit message language in the root `AGENTS.md` for this directory.
 
-## 验证
+- Code comments are in English.
+- Every commit that changes this directory has an English commit message, including a commit that also changes other directories. Prefer to keep changes to this directory in commits of their own.
+- Documents are in English. The only exception is the README: `README.md` (English) and `README.zh.md` (Chinese) are two versions of the same content, kept in sync.
+- User-facing product text is not a document: the `en` / `zh` dictionaries in `lib/client.js` and `locale/*.json` keep both languages.
+- Earlier commits with Chinese messages are not rewritten.
 
-- `npm test` (Node 22+, 本机直接运行; 不需要 Docker). 改动只涉及 `lib/client.js` 时至少运行 `node --check lib/client.js`.
-- 发布前用 `npm pack` 生成 tarball, 在 dsh Desktop 用 `dsh plugin --profile desktop add <tgz>` 安装验证 (dsh 必须先退出).
+## Editing Rules
 
-## 发布
+- The package has no runtime dependencies. The browser side may only `require` dsh shared modules (`react`, `@deepseek-ai/dsh-client-ui-primitives`, and so on; the source of truth is `packages/client/web/src/platform.ts` in deepseek-harness).
+- Always run `quicktui-server` with an absolute path and an argv array, never through a shell. Installation only runs the official `q.sh` (`https://quicktui.ai/q.sh` or `https://dl.quicktui.cn/q.sh`), and only after the user confirms on the setup page.
+- Pairing text and pairing codes go only to the setup page. Never write them to logs or files.
+- When setup page copy changes, keep the `en` and `zh` dictionaries in `lib/client.js` in sync. When the detail page changes, keep `README.md` and `README.zh.md` in sync.
+- A change to the wire protocol (`PROTOCOL.md`) must match the dsh consumer in `agentbridge2`.
 
-npm 包 `quicktui-dsh` (不带 scope) 由用户的个人 npm 账号发布. dsh 按包名经 pnpm 安装, 先查 `registry.npmjs.org`, 再查 `registry.npmmirror.com`. 源码同步到公开仓库 `github.com/dualface/quicktui-dsh`, 供 npm `repository` 字段与 awesome-dsh-plugin 条目引用.
+## Verification
 
-- **发布顺序 (硬性)**: 桥接默认开启, 只有 server 的 stable 发布已包含 dsh provider 之后才发布插件. 旧版 server 拒绝 `ab2hook --agent dsh`, 插件只会反复重启等待.
-- **发布来源**: 发布 `origin/main` 上的提交. 版本号与 `CHANGELOG.md` 的改动先按常规任务进入 `develop`, 经晋升进入 `main`.
-- **对外动作逐项确认 (硬性)**: 下列每一步执行前都向用户编号确认 (`1. 确认执行`; `2. 终止`), 不因上一步已确认而跳过: 新建公开仓库, `scripts/sync-public-repo.sh` 推送, `npm publish`, 向 awesome-dsh-plugin 提交 PR.
+- `npm test` (Node 22+, runs directly on the host; no Docker). When a change only touches `lib/client.js`, run at least `node --check lib/client.js`.
+- Before publishing, build a tarball with `npm pack` and install it in dsh Desktop with `dsh plugin --profile desktop add <tgz>` to verify it (quit dsh first).
 
-步骤:
+## Publishing
 
-1. 核对: `npm test` 通过; `package.json` 的 `version` 与 `CHANGELOG.md` 最新一节一致; `engines.dsh` 覆盖 npm 上 `@deepseek-ai/dsh` 的 `latest`; 按「验证」用 tarball 在 dsh Desktop 安装验证.
-2. 同步公开仓库: `integrations/quicktui-dsh/scripts/sync-public-repo.sh origin/main <version>`, 推送 `main` 与 tag `v<version>`.
-3. 发布 npm: 用户先在本机 `npm login`; 在 `origin/main` 的干净 checkout 的本目录运行 `npm publish`. 之后 `npm view quicktui-dsh version` 与 `https://registry.npmmirror.com/quicktui-dsh` 都返回新版本.
-4. 首次发布后收录到 awesome-dsh-plugin (之后的版本不需要): 按该仓库 `contributing.md` 新增 `data/plugins/dualface__quicktui-dsh.yml` (`category: remote`); 公开仓库加 `dsh-plugin` topic, 且已存在 1 天以上; 条目 `icon` 只接受 GitHub 上的 png / jpg / webp.
+The npm package `quicktui-dsh` (unscoped) is published from the user's personal npm account. dsh installs it by package name through pnpm, looking at `registry.npmjs.org` first, then `registry.npmmirror.com`. The source is synced to the public repository `github.com/dualface/quicktui-dsh`, which the npm `repository` field and the awesome-dsh-plugin entry point to. The public repository is a one-way mirror: never commit to it directly, and port outside contributions into this directory. Its pull requests are disabled.
+
+- **Publishing order (hard rule)**: the bridge is on by default, so publish the plugin only after a stable server release contains the dsh provider. An older server rejects `ab2hook --agent dsh`, and the plugin keeps restarting and waiting.
+- **Publishing source**: publish commits on `origin/main`. Version number and `CHANGELOG.md` changes enter `develop` as ordinary tasks first, then `main` through promotion.
+- **Confirm every outward action (hard rule)**: before each of the steps below, ask the user for a numbered confirmation (`1. Confirm`; `2. Stop`), and never skip one because an earlier step was confirmed: creating the public repository, pushing with `scripts/sync-public-repo.sh`, `npm publish`, and opening a PR to awesome-dsh-plugin.
+
+Steps:
+
+1. Check: `npm test` passes; `version` in `package.json` matches the latest section of `CHANGELOG.md`; `engines.dsh` covers the `latest` of `@deepseek-ai/dsh` on npm; the tarball is verified in dsh Desktop as in "Verification".
+2. Sync the public repository: `integrations/quicktui-dsh/scripts/sync-public-repo.sh origin/main <version>` pushes `main` and the tag `v<version>`.
+3. Publish to npm: the user runs `npm login` on this machine first; run `npm publish` in this directory of a clean checkout of `origin/main`. Afterwards `npm view quicktui-dsh version` and `https://registry.npmmirror.com/quicktui-dsh` both return the new version.
+4. After the first release, list the plugin in awesome-dsh-plugin (later versions do not need this): add `data/plugins/dualface__quicktui-dsh.yml` (`category: remote`) as that repository's `contributing.md` describes; the public repository has the `dsh-plugin` topic and has existed for more than one day; the entry's `icon` accepts only png / jpg / webp files on GitHub.
