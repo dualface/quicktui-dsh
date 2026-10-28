@@ -5,6 +5,13 @@
   "license": "MIT",
   "author": "QuickTUI",
   "homepage": "https://quicktui.ai/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dualface/quicktui-dsh.git"
+  },
+  "bugs": {
+    "url": "https://github.com/dualface/quicktui-dsh/issues"
+  },
   "keywords": [
     "deepseek-harness",
     "dsh",
@@ -27,10 +34,11 @@
     "icon.svg",
     "cordis.patch.yml",
     "PROTOCOL.md",
-    "README.zh.md"
+    "README.zh.md",
+    "CHANGELOG.md"
   ],
   "engines": {
-    "dsh": ">=0.2.1-rc.3 <0.3.0"
+    "dsh": ">=0.2.1-rc.2 <0.3.0"
   },
   "dsh": {
     "manifestVersion": 1,
