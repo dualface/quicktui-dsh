@@ -186,6 +186,14 @@ push('s-recent', event(6, 'turn/end', { reason: { kind: 'completed' } }), false)
 ctx.emit('agent/status', { agent: agentOf('s-recent'), status: 'idle' })
 await until('idle catch-up', () => seqs('s-recent').length === 7)
 await until('session_status', () => eventWhere({ event: 'session_status', agent_session_id: 's-recent', status: 'idle' }))
+// A subagent Session is neither mirrored nor reported.
+const sub = { id: 's-sub', header: { ...store.get('s-sub').header, origin: 'subagent', parentSession: 's-recent' } }
+ctx.emit('session/event', sub, event(1, 'turn/start'))
+ctx.emit('agent/status', { agent: { session: sub }, status: 'running' })
+ctx.emit('agent/created', { agent: { session: sub } })
+await sleep(150)
+assert.equal(existsSync(join(sidecarDir, 's-sub.jsonl')), false)
+assert.equal(events().some((entry) => entry.agent_session_id === 's-sub'), false)
 // Session ids that are not plain file names are never mirrored.
 ctx.emit('session/event', { id: '../escape' }, event(0, 'session/start'))
 await sleep(100)
@@ -287,6 +295,13 @@ await sleep(200)
 answer(shown.prompt_id, { kind: 'question', answers: [{ id: 'perm', selected: ['Allow'] }] })
 assert.deepEqual(await pending, { answers: [{ id: 'perm', selected: ['Allow'] }] })
 
+// A subagent's request shows as a request of its parent Session.
+pending = ctx.waterfall('approval/request', { agent: { session: sub }, toolName: 'pwsh', signal: new AbortController().signal }, desktopCard())
+shown = await promptStart(7)
+assert.equal(shown.agent_session_id, 's-recent')
+answer(shown.prompt_id, { kind: 'approval', decision: 'reject' })
+assert.equal(await pending, 'rejected')
+
 // A question QuickTUI cannot show in full goes straight to Desktop.
 const wide = [{ id: 'many', question: 'Pick', options: Array.from({ length: 65 }, (_, index) => ({ label: `o${index}` })) }]
 const before = events().filter((entry) => entry.event === 'ui_prompt_start').length
@@ -297,12 +312,12 @@ assert.equal(events().filter((entry) => entry.event === 'ui_prompt_start').lengt
 
 // --- commands ---------------------------------------------------------------------
 const commandWait = await until('command wait', () => waits().find((wait) => wait.mode === 'command'))
-assert.deepEqual(commandWait.request, { schema_version: 'ab2.dsh-command-wait.v1', instance_id: start.instance_id })
-command({ id: 'cmd-1', kind: 'prompt', agent_session_id: 's-recent', text: 'continue please' })
-command({ id: 'cmd-1', kind: 'prompt', agent_session_id: 's-recent', text: 'continue please' })
-command({ id: 'cmd-2', kind: 'prompt', agent_session_id: 's-recent', text: '   ' })
-command({ id: 'cmd-3', kind: 'interrupt', agent_session_id: 's-recent' })
-command({ id: 'cmd-4', kind: 'prompt', agent_session_id: 's-missing', text: 'hello', mode: 'steer' })
+assert.deepEqual(commandWait.request, { schema_version: 'ab2.dsh-command-wait.v1', channel_id: start.instance_id, process_id: process.pid })
+command({ command_id: 'cmd-1', kind: 'prompt', agent_session_id: 's-recent', text: 'continue please' })
+command({ command_id: 'cmd-1', kind: 'prompt', agent_session_id: 's-recent', text: 'continue please' })
+command({ command_id: 'cmd-2', kind: 'prompt', agent_session_id: 's-recent', text: '   ' })
+command({ command_id: 'cmd-3', kind: 'interrupt', agent_session_id: 's-recent' })
+command({ command_id: 'cmd-4', kind: 'prompt', agent_session_id: 's-missing', text: 'hello', mode: 'steer' })
 await until('cmd-4 failed', () => eventWhere({ event: 'command_failed', command_id: 'cmd-4' }), 30_000)
 assert.equal(ctx.prompts.length, 1)
 assert.equal(ctx.prompts[0].sessionId, 's-recent')
@@ -317,7 +332,7 @@ assert.equal(events().some((entry) => entry.command_id === 'cmd-2'), false)
 
 // --- unload ---------------------------------------------------------------------
 pending = ctx.waterfall('approval/request', { agent: agentOf('s-recent'), toolName: 'pwsh', signal: new AbortController().signal }, desktopCard({ ms: 1500, value: 'rejected' }))
-shown = await promptStart(7)
+shown = await promptStart(8)
 const unloadWait = await until('unload dialog wait', () => waits().find((wait) => wait.request.prompt_id === shown.prompt_id))
 const openCommandWait = await until('open command wait', () => waits().filter((wait) => wait.mode === 'command').at(-1))
 ctx.dispose()
@@ -341,16 +356,19 @@ quietHook = fakeHook
 quietBridge.hookChanged()
 const quietStart = await until('late plugin_start', () => events().slice(eventCount).find((entry) => entry.event === 'plugin_start'))
 assert.equal(quietStart.sidecar_dir, quietDir)
-await until('late command wait', () => waits().some((wait) => wait.mode === 'command' && wait.request.instance_id === quietStart.instance_id))
+await until('late command wait', () => waits().some((wait) => wait.mode === 'command' && wait.request.channel_id === quietStart.instance_id))
 quiet.dispose()
 await until('late plugin_stop', () => events().some((entry) => entry.event === 'plugin_stop' && entry.instance_id === quietStart.instance_id))
 
-// --- a process that does not own the sidecar directory skips the backfill -------
+// --- a process that does not own the sidecar directory skips the backfill and
+// takes no commands -----------------------------------------------------------
 const guestDir = join(fakeDir, 'guest')
 const guest = new FakeContext(new Map([session('g-1', { events: [event(0, 'session/start')] })]))
-startBridge(guest, { backfillDays: 30, sidecarDir: guestDir, hook: () => undefined, backfillAtStart: Promise.resolve(false) })
+startBridge(guest, { backfillDays: 30, sidecarDir: guestDir, hook: () => fakeHook, owns: async () => false })
+const guestStart = await until('guest plugin_start', () => eventWhere({ event: 'plugin_start', sidecar_dir: guestDir }))
 await sleep(300)
 assert.equal(existsSync(join(guestDir, 'g-1.state.json')), false)
+assert.equal(waits().some((wait) => wait.request.channel_id === guestStart.instance_id), false)
 // Its own activity still mirrors the Session.
 guest.emit('agent/status', { agent: agentOf('g-1'), status: 'idle' })
 await until('guest mirror on activity', () => existsSync(join(guestDir, 'g-1.state.json')))

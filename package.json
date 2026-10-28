@@ -1,7 +1,7 @@
 {
   "name": "quicktui-dsh",
   "version": "0.1.0",
-  "description": "Set up QuickTUI from DeepSeek Harness: install QuickTUI server and pair the QuickTUI phone app from the Plugins page.",
+  "description": "Use QuickTUI with DeepSeek Harness: install QuickTUI server, pair the QuickTUI phone app, and follow and control dsh sessions from your phone.",
   "license": "MIT",
   "author": "QuickTUI",
   "homepage": "https://quicktui.ai/",

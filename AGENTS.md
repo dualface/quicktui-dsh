@@ -4,10 +4,10 @@
 
 只管 npm 包 `quicktui-dsh`: DeepSeek Harness (dsh) 的 bundle 插件. 用户在 dsh「插件」页按包名安装.
 
-- `lib/index.js`: host 入口. 组合 server 检测、设置页路由与桥接. 桥接默认关闭 (配置 `bridge: true` 开启), 等 server 支持 dsh provider 后再改默认值.
+- `lib/index.js`: host 入口. 组合 server 检测、设置页路由与桥接. 桥接默认开启 (配置 `bridge: false` 关闭).
 - `lib/bridge.js`: AgentBridge2 桥接. 线协议见 [PROTOCOL.md](PROTOCOL.md), 由 `agentbridge2` 的 `ab2hook --agent dsh` 消费.
 - `lib/setup.js`: 检测、安装、启动、配对 `quicktui-server`. `lib/routes.js`: 设置页调用的 `/api/quicktui-dsh/*` 路由.
-- `lib/owner.js`: `owner.pid` 属主锁. 只决定启动回填由哪个 dsh 进程执行.
+- `lib/owner.js`: `owner.pid` 属主锁. 决定由哪个 dsh 进程执行启动回填并等待命令.
 - `lib/client.js`: 浏览器端. 手写的 classic script, 经 `window.__ModuleLoader__.load` 注册, 不经构建.
 - `lib/vendor/qrcode.cjs`: 原样内置的 `qrcode-generator` (MIT). 只整文件替换, 不改内容.
 - `README.md` / `README.zh.md`: dsh 插件详情页 (中文经 `locale/zh.json` 的 `meta.detail` 选用).

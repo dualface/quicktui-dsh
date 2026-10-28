@@ -30,11 +30,11 @@ const fakeContext = () => {
   return ctx
 }
 
-test('the bridge is off by default; the setup routes are registered', async () => {
+test('bridge: false keeps the bridge off; the setup routes are registered', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'quicktui-dsh-index-'))
   try {
     const ctx = fakeContext()
-    apply(ctx, { sidecarDir: dir, serverPath: join(dir, 'missing', 'quicktui-server') })
+    apply(ctx, { bridge: false, sidecarDir: dir, serverPath: join(dir, 'missing', 'quicktui-server') })
     assert.equal(name, 'quicktui-dsh')
     assert.deepEqual(ctx.routes, ['/api/quicktui-dsh/status', '/api/quicktui-dsh/install', '/api/quicktui-dsh/start', '/api/quicktui-dsh/pairing'])
     assert.deepEqual(ctx.listeners, [])
@@ -47,11 +47,11 @@ test('the bridge is off by default; the setup routes are registered', async () =
   }
 })
 
-test('bridge: true starts the bridge and owns the sidecar directory', async () => {
+test('the bridge starts by default and owns the sidecar directory', async () => {
   const dir = mkdtempSync(join(tmpdir(), 'quicktui-dsh-index-'))
   try {
     const ctx = fakeContext()
-    apply(ctx, { bridge: true, sidecarDir: dir, serverPath: join(dir, 'missing', 'quicktui-server') })
+    apply(ctx, { sidecarDir: dir, serverPath: join(dir, 'missing', 'quicktui-server') })
     assert.ok(ctx.listeners.includes('approval/request'))
     for (let i = 0; i < 100 && !existsSync(join(dir, 'owner.pid')); i++) await new Promise((resolve) => setTimeout(resolve, 10))
     assert.equal(readFileSync(join(dir, 'owner.pid'), 'utf8'), String(process.pid))

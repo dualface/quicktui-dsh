@@ -4,7 +4,9 @@ The contract between the bridge in `lib/bridge.js` and AgentBridge2's `ab2hook -
 The setup page and its routes are described in [README.md](README.md) and [AGENTS.md](AGENTS.md).
 
 The bridge needs `sessionController`, which only the `desktop` and `web` profiles provide. One
-plugin instance serves every Session of its dsh process.
+plugin instance serves every Session of its dsh process. Subagent Sessions (header
+`origin: "subagent"`) are not mirrored and send no events; their approvals and questions are
+reported as requests of the parent Session (header `parentSession`).
 
 Verified against dsh 0.2.x (deepseek-harness commit 22ddee37) on Windows.
 
@@ -13,7 +15,15 @@ Verified against dsh 0.2.x (deepseek-harness commit 22ddee37) on Windows.
 The hook is the detected `quicktui-server` executable (or the `serverPath` config): the bridge runs
 `<server> ab2hook --agent dsh ... [--root <root>]` with an argv array. The path is read again
 before every hook process. While no server is known the bridge only writes sidecars and leaves
-every request to Desktop; once one is found it sends `plugin_start` and starts taking commands.
+every request to Desktop; once one is found it sends `plugin_start`, and the owner (below) starts
+taking commands.
+
+## Owner
+
+Several dsh processes (a desktop and a web profile) can run the plugin against one sidecar
+directory. The process holding `<sidecarDir>/owner.pid` is the owner: only it does the startup
+backfill and waits for commands, so each command runs once. A process that is not the owner asks
+again before each command wait and takes over once the owner exits.
 
 ## Config
 
@@ -21,7 +31,7 @@ The `quicktui-dsh` row in a profile's `cordis.patch.yml` takes these optional ke
 
 | Key | Meaning |
 | --- | --- |
-| `bridge` | `true` starts the bridge; default off until QuickTUI server ships the dsh provider (a current server ignores `ab2hook --agent dsh`) |
+| `bridge` | `false` turns the bridge off; default on |
 | `serverPath` | absolute `quicktui-server` path; detected when absent |
 | `root` | passed as `--root` |
 | `sidecarDir` | default `<DSH_HOME or ~/.dsh>/quicktui/sidecar` |
@@ -41,8 +51,9 @@ process it continues after the sidecar's last complete line and cuts a torn one,
 an append and its state write repeats no event.
 
 - At startup the plugin reads every Session updated within `backfillDays` that is not blank and not
-  a subagent Session. Only the process holding `<sidecarDir>/owner.pid` does this, so a desktop and
-  a web profile running together do not both rewrite the sidecars. Older Sessions get their full history the first time they show activity.
+  a subagent Session. Only the owner does this, so a desktop and a web profile running together do
+  not both rewrite the sidecars. Older Sessions get their full history the first time they show
+  activity.
 - A seq gap, a Session without a sidecar, `agent/created`, and `agent/status: idle` each trigger a
   full read through `sessionQuery.readSession`. Some appends never reach `session/event`: the
   `session/end-seed` written when Desktop reopens a Session, and the `interrupted` turn end dsh
@@ -100,13 +111,18 @@ within 60 s without an accepted answer restarts after 1, 5, 15, then every 30 s.
 
 ## Commands
 
-One `ab2hook --agent dsh --wait-command` process with stdin
-`{"schema_version":"ab2.dsh-command-wait.v1","instance_id":...}` prints at most one command:
+The owner keeps one `ab2hook --agent dsh --wait-command` process with stdin
+`{"schema_version":"ab2.dsh-command-wait.v1","channel_id":<instance_id>,"process_id":<dsh pid>}`.
+AgentBridge2 sends commands for every dsh Session to the current wait of the channel. The process
+prints at most one command:
 
-- `{"schema_version":"ab2.dsh-command.v1","id","kind":"prompt","agent_session_id","text","mode"?: "queue"|"steer"}`
-  (`text` non-blank, at most 65536 bytes). A cold Session is resumed first.
-- `{"schema_version":"ab2.dsh-command.v1","id","kind":"interrupt","agent_session_id"}` cancels the
-  active turn. dsh keeps the Session inbox, so a queued or steered prompt stays pending. A Session
-  that is not loaded fails with `not found (not attached)`.
+- `{"schema_version":"ab2.dsh-command.v1","command_id","kind":"prompt","agent_session_id","text","mode"?: "queue"|"steer"}`
+  (`text` non-blank, at most 32768 bytes, the QuickTUI prompt limit). Without `mode` the prompt
+  waits behind the running turn (`queue`). A cold Session is resumed first.
+- `{"schema_version":"ab2.dsh-command.v1","command_id","kind":"interrupt","agent_session_id"}`
+  cancels the active turn. dsh keeps the Session inbox, so a queued or steered prompt stays
+  pending. A Session that is not loaded fails with `not found (not attached)`.
 
-Each id runs at most once (the last 64 ids are kept). Invalid commands are ignored.
+The owner runs a command for any Session, also one that another dsh process has open: a prompt
+then resumes the Session in the owner as well. Each `command_id` runs at most once (the last 64
+are kept). Invalid commands are ignored.

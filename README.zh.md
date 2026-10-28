@@ -1,6 +1,6 @@
 # QuickTUI for DeepSeek Harness
 
-在 dsh 中设置 [QuickTUI](https://quicktui.ai/cn/): 在本机安装 QuickTUI server, 并配对手机上的 QuickTUI App.
+在 dsh 中设置 [QuickTUI](https://quicktui.ai/cn/): 在本机安装 QuickTUI server, 配对手机上的 QuickTUI App, 并在手机上查看 dsh 会话.
 
 ## 设置
 
@@ -19,6 +19,13 @@
 
 ## 在 QuickTUI 中查看 dsh 会话
 
-在 QuickTUI 中查看 dsh 会话需要支持 dsh 的 QuickTUI server 版本, 该版本尚未发布. 本版插件负责安装 QuickTUI server 和配对手机; 后续版本再接入 dsh 会话.
+QuickTUI server 版本支持 dsh 时, 插件把 dsh 会话接入 QuickTUI. 在手机上可以:
+
+- 查看每个会话的状态和对话;
+- 回答工具审批 (允许一次或拒绝) 和 dsh 提问;
+- 发送 prompt (排在正在运行的轮次之后), 以及中断轮次.
+
+请求在 dsh 卡片上同样保持打开, 先到的回答生效. 子代理的工作显示在父会话中. 要关闭接入, 在 profile 的
+`cordis.patch.yml` 中为 `quicktui-dsh` 设置 `bridge: false`.
 
 插件需要 `desktop` 或 `web` profile.

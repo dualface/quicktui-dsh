@@ -1,6 +1,6 @@
 # QuickTUI for DeepSeek Harness
 
-Set up [QuickTUI](https://quicktui.ai/) from dsh: install QuickTUI server on this computer and pair the QuickTUI app on your phone.
+Set up [QuickTUI](https://quicktui.ai/) from dsh: install QuickTUI server on this computer, pair the QuickTUI app on your phone, and follow your dsh sessions from it.
 
 ## Set up
 
@@ -20,8 +20,15 @@ Open this plugin's page in **Plugins**. The page walks through three steps:
 
 ## dsh sessions in QuickTUI
 
-Following dsh sessions from QuickTUI needs a QuickTUI server version with dsh support, which is
-not released yet. This version of the plugin sets up QuickTUI server and pairs your phone; a later
-version connects your dsh sessions.
+With a QuickTUI server version that supports dsh, the plugin connects your dsh sessions to
+QuickTUI. On your phone you can:
+
+- follow each session's status and conversation;
+- answer tool approvals (allow once or reject) and dsh questions;
+- send a prompt, which waits behind the running turn, and interrupt a turn.
+
+A request stays open on the dsh card too: the first answer wins. Subagent work shows inside its
+parent session. To turn the connection off, set `bridge: false` for `quicktui-dsh` in the profile's
+`cordis.patch.yml`.
 
 The plugin needs the `desktop` or `web` profile.

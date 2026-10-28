@@ -1,7 +1,7 @@
 {
   "meta": {
     "title": "QuickTUI",
-    "description": "安装 QuickTUI server, 配对 QuickTUI 手机 App.",
+    "description": "安装 QuickTUI server, 配对 QuickTUI 手机 App, 在手机上查看和操作 dsh 会话.",
     "detail": "README.zh.md"
   }
 }
