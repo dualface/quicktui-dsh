@@ -1,5 +1,7 @@
 # QuickTUI for DeepSeek Harness
 
+[English](https://github.com/dualface/quicktui-dsh/blob/main/README.md) | 简体中文
+
 在 dsh 中设置 [QuickTUI](https://quicktui.ai/cn/): 在本机安装 QuickTUI server, 配对手机上的 QuickTUI App, 并在手机上查看 dsh 会话.
 
 ## 设置

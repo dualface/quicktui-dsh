@@ -1,5 +1,7 @@
 # QuickTUI for DeepSeek Harness
 
+English | [简体中文](https://github.com/dualface/quicktui-dsh/blob/main/README.zh.md)
+
 Set up [QuickTUI](https://quicktui.ai/) from dsh: install QuickTUI server on this computer, pair the QuickTUI app on your phone, and follow your dsh sessions from it.
 
 ## Set up
