@@ -1,0 +1,5 @@
+# Mounts the plugin in the profile that installs this bundle. The row name must
+# be the package name so dsh also loads ./client for it.
+- insert:
+    - id: quicktui-dsh
+      name: quicktui-dsh
