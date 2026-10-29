@@ -47,6 +47,6 @@ The npm package `quicktui-dsh` (unscoped) is published from the user's personal 
 Steps:
 
 1. Check: `npm test` passes; `version` in `package.json` matches the latest section of `CHANGELOG.md`; `engines.dsh` covers the `latest` of `@deepseek-ai/dsh` on npm; the tarball is verified in dsh Desktop as in "Verification".
-2. Sync the public repository: `integrations/quicktui-dsh/scripts/sync-public-repo.sh origin/main <version>` pushes `main` and the tag `v<version>`.
+2. Sync the public repository: `integrations/quicktui-dsh/scripts/sync-public-repo.sh origin/main <version>` pushes `main` and the tag `v<version>`. It appends the new commits to the public `main`, so the push is a fast-forward. When the tree of the public `main` is not on the first-parent history of `origin/main`, it stops without pushing; never force-push the public repository to get past this.
 3. Publish to npm: the user runs `npm login` on this machine first; run `npm publish` in this directory of a clean checkout of `origin/main`. Afterwards `npm view quicktui-dsh version` and `https://registry.npmmirror.com/quicktui-dsh` both return the new version.
 4. After the first release, list the plugin in awesome-dsh-plugin (later versions do not need this): add `data/plugins/dualface__quicktui-dsh.yml` (`category: remote`) as that repository's `contributing.md` describes; the public repository has the `dsh-plugin` topic and has existed for more than one day; the entry's `icon` accepts only png / jpg / webp files on GitHub.
