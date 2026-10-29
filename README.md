@@ -10,9 +10,9 @@ Open this plugin's page in **Plugins**. The page walks through three steps:
 
 1. **QuickTUI server.** The page checks whether QuickTUI server is installed on this computer.
    - macOS and Linux: select **Install QuickTUI server**. dsh downloads the official install script
-     and runs it with your user account. It installs the preview channel, the first channel with dsh
-     support. It is the same as running
-     `curl -fsSL https://quicktui.ai/q.sh | sh -s -- install --channel preview -y`
+     and runs it with your user account. It installs the latest QuickTUI server release. It is the
+     same as running
+     `curl -fsSL https://quicktui.ai/q.sh | sh -s -- install --channel server2 -y`
      (in China mainland, `https://dl.quicktui.cn/q.sh`). No administrator password is needed.
    - Windows: install [QuickTUI from the Microsoft Store](https://apps.microsoft.com/detail/9P1SRCZ4CJ8Z),
      then open it once from the Start menu. The page finds the server within a minute.

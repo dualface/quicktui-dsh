@@ -10,8 +10,8 @@
 
 1. **QuickTUI server.** 页面检查本机是否已安装 QuickTUI server.
    - macOS 和 Linux: 选择「安装 QuickTUI server」. dsh 下载官方安装脚本, 用你的用户账号运行.
-     脚本安装 preview 渠道的 server, 这是第一个支持 dsh 的渠道.
-     效果等同于运行 `curl -fsSL https://dl.quicktui.cn/q.sh | sh -s -- install --channel preview -y`
+     脚本安装 QuickTUI server 的最新正式版.
+     效果等同于运行 `curl -fsSL https://dl.quicktui.cn/q.sh | sh -s -- install --channel server2 -y`
      (中国大陆以外用 `https://quicktui.ai/q.sh`). 不需要管理员密码.
    - Windows: 在 [Microsoft Store 安装 QuickTUI](https://apps.microsoft.com/detail/9P1SRCZ4CJ8Z),
      然后从开始菜单打开一次. 页面在一分钟内会检测到 server.

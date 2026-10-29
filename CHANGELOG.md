@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.2
+
+- The plugin page now installs the latest QuickTUI server release instead of a preview build: QuickTUI server releases support dsh now.
+
 ## 0.1.1
 
 - Text the plugin cuts to fit its limit (a question, its detail or header, an option description, or an approval's tool name, reason, or arguments) is now reported to QuickTUI server, so the app marks it as cut. Needs a QuickTUI server version that shows these marks; an older server ignores them.
