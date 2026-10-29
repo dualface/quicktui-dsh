@@ -302,6 +302,31 @@ assert.equal(shown.agent_session_id, 's-recent')
 answer(shown.prompt_id, { kind: 'approval', decision: 'reject' })
 assert.equal(await pending, 'rejected')
 
+// Text cut to its bound is named in truncated.
+ctx.emit('session/event', { id: 's-recent' }, event(8, 'tool/call', { callId: 'call-long', name: 'pwsh', arguments: 'a'.repeat(5000) }))
+pending = ctx.waterfall('approval/request', { agent: agentOf('s-recent'), toolName: 'pwsh', callId: 'call-long',
+  reason: 'é'.repeat(3000), signal: new AbortController().signal }, desktopCard())
+shown = await promptStart(8)
+assert.deepEqual(shown.truncated, ['reason', 'tool_arguments'])
+assert.equal(shown.tool_arguments, 'a'.repeat(4096))
+assert.equal(shown.reason, 'é'.repeat(2048))
+answer(shown.prompt_id, { kind: 'approval', decision: 'reject' })
+assert.equal(await pending, 'rejected')
+const longQuestions = [
+  { id: 'plan-review', header: 'Plan review', question: 'Approve this plan?', detail: '# Plan\n' + 'x'.repeat(70_000),
+    options: [{ label: 'Approve', description: 'd'.repeat(5000) }, { label: 'Keep planning' }], intent: { kind: 'plan-review', approve: 'Approve' } },
+  { id: 'short', question: 'q'.repeat(5000), options: [{ label: 'Yes', description: 'fine' }] },
+]
+pending = ctx.waterfall('user-questions/request', { agent: agentOf('s-recent'), questions: longQuestions, signal: new AbortController().signal }, desktopCard())
+shown = await promptStart(9)
+assert.deepEqual(shown.questions[0].truncated, ['detail'])
+assert.equal(shown.questions[0].detail.length, 65_536)
+assert.deepEqual(shown.questions[0].options, [{ label: 'Approve', description: 'd'.repeat(4096), truncated: ['description'] }, { label: 'Keep planning' }])
+assert.deepEqual(shown.questions[1].truncated, ['question'])
+assert.equal(shown.questions[1].options[0].truncated, undefined)
+answer(shown.prompt_id, { kind: 'question', answers: [{ id: 'plan-review', selected: ['Keep planning'], custom: 'shorter' }, { id: 'short', selected: ['Yes'] }] })
+assert.deepEqual(await pending, { answers: [{ id: 'plan-review', selected: ['Keep planning'], custom: 'shorter' }, { id: 'short', selected: ['Yes'] }] })
+
 // A question QuickTUI cannot show in full goes straight to Desktop.
 const wide = [{ id: 'many', question: 'Pick', options: Array.from({ length: 65 }, (_, index) => ({ label: `o${index}` })) }]
 const before = events().filter((entry) => entry.event === 'ui_prompt_start').length
@@ -332,7 +357,7 @@ assert.equal(events().some((entry) => entry.command_id === 'cmd-2'), false)
 
 // --- unload ---------------------------------------------------------------------
 pending = ctx.waterfall('approval/request', { agent: agentOf('s-recent'), toolName: 'pwsh', signal: new AbortController().signal }, desktopCard({ ms: 1500, value: 'rejected' }))
-shown = await promptStart(8)
+shown = await promptStart(10)
 const unloadWait = await until('unload dialog wait', () => waits().find((wait) => wait.request.prompt_id === shown.prompt_id))
 const openCommandWait = await until('open command wait', () => waits().filter((wait) => wait.mode === 'command').at(-1))
 ctx.dispose()

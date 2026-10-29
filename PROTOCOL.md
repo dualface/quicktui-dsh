@@ -82,14 +82,20 @@ Every event has `schema_version: "ab2.dsh-plugin-event.v1"`, `event`, and `insta
 | `command_failed` | the same, plus `error` |
 
 Approval (`kind: "approval"`): `tool_name`, `tool_call_id`, `reason`, `display_reason` (locale map),
-`tool_arguments` (the tool call's raw JSON arguments, bounded).
+`tool_arguments` (the tool call's raw JSON arguments, bounded), `truncated`.
 
 Question (`kind: "question"`): `tool_call_id` and `timed` (from dsh's wait), `questions[]` with `id`,
-`question`, `detail`, `header`, `multi_select`, `intent` (`kind`, `approve`, `reject`, `always`), and
-`options[]` (`label`, `description`). A question with more than 16 questions, more than 64 options,
-or an over-long id or label is not reported and stays Desktop-only.
+`question`, `detail`, `header`, `multi_select`, `intent` (`kind`, `approve`, `reject`, `always`),
+`truncated`, and `options[]` (`label`, `description`, `truncated`). A question with more than 16
+questions, more than 64 options, or an over-long id or label is not reported and stays Desktop-only.
 
-Shown text is bounded to 4096 UTF-8 bytes (question `detail`: 65536); ids to 256 bytes.
+Shown text is bounded to 4096 UTF-8 bytes (question `detail`: 65536); ids to 256 bytes. `truncated`
+names the fields of its object that the plugin cut to their bound: `tool_name`, `reason`, and
+`tool_arguments` on an approval; `question`, `detail`, and `header` on a question; `description` on an
+option. It is absent when nothing was cut. AgentBridge2 ends the shown text of a named field with a
+truncation marker, and offers no approve option for a plan review (`intent.kind: "plan-review"`)
+whose plan was cut. A plugin without `truncated` is still accepted; AgentBridge2 then marks only the
+text it cuts itself.
 
 ## Dialog wait
 
