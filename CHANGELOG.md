@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Text the plugin cuts to fit its limit (a question, its detail or header, an option description, or an approval's tool name, reason, or arguments) is now reported to QuickTUI server, so the app marks it as cut. Needs a QuickTUI server version that shows these marks; an older server ignores them.
+
 ## 0.1.0
 
 - Set up QuickTUI from the plugin page: detect, install, and start QuickTUI server, pair the QuickTUI phone app with a QR code, and get the app.
